@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Tab Triage</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="head">
+    <h1>Tab Triage</h1>
+    <span id="mode" class="badge"></span>
+  </div>
+  <p id="summary" class="summary">Scanning…</p>
+
+  <button id="open-report" class="btn primary block">Open full report</button>
+
+  <div class="quick">
+    <input id="quick-name" type="text" placeholder="Stash name (optional)" />
+    <button id="stash-close-first" class="btn block">Stash all “Close First”</button>
+  </div>
+
+  <h2>Recent stashes</h2>
+  <ul id="stashes"><li class="muted">None yet.</li></ul>
+
+  <div id="toast" class="toast" hidden></div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

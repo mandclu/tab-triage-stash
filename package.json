@@ -1,0 +1,11 @@
+{
+  "name": "tab-triage",
+  "version": "0.1.0",
+  "description": "Prioritize the tabs eating your RAM, then stash them without losing them.",
+  "private": true,
+  "license": "MIT",
+  "author": "Martin Anderson-Clutz",
+  "scripts": {
+    "zip": "cd \"$(dirname \"$0\")\" 2>/dev/null; rm -f tab-triage.zip && zip -rq tab-triage.zip manifest.json README.md LICENSE src icons -x '*.DS_Store' && echo 'wrote tab-triage.zip'"
+  }
+}
