@@ -28,14 +28,17 @@ tab-triage/
 │   ├── scoring.js          pure scoring functions
 │   ├── memoryProvider.js   estimated vs. measured memory (Dev-channel API)
 │   ├── report/             the full report page
-│   └── popup/              the toolbar popup
+│   ├── popup/              the toolbar popup
+│   └── options/            options page — editable custom ruleset (chrome.storage.local)
 ├── icons/
 └── README.md
 ```
 
 ## Permissions
 
-`tabs` (read titles/URLs and close tabs), `bookmarks` (create stash folders), `storage` (undo buffer), `tabGroups` (reserved for optional visual grouping). No host permissions and no content scripts — the extension never injects into your pages. The `tabs` permission triggers Chrome's "read your browsing history" warning; that is expected and unavoidable for a tab manager.
+`tabs` (read titles/URLs and close tabs), `bookmarks` (create stash folders), `storage` (undo buffer). No host permissions and no content scripts — the extension never injects into your pages. The `tabs` permission triggers Chrome's "read your browsing history" warning; that is expected and unavoidable for a tab manager.
+
+`tabGroups` is **not** currently requested — nothing in the extension uses it yet. It will be needed if/when the optional visual-grouping preview (grouping selected tabs in the live window before stashing them) is built; see `STEPS.md` step 4.
 
 ## Measured memory mode (optional)
 
@@ -60,4 +63,6 @@ To ship a stable-only build, delete the `optional_permissions` entry in `manifes
 
 ## Customizing the ruleset
 
-Add or move domains in `src/categories.js`. Each rule maps a list of hosts to a category; the first matching rule wins, and unmatched hosts fall into `UNKNOWN`. Reload the extension from `chrome://extensions` after editing.
+The easiest way is the **options page** — right-click the extension icon → **Options**, or open `chrome://extensions`, find Tab Triage, and click **Extension options**. Pick a category, type a host (or a comma-separated list), and click **Add rule**. Custom rules are checked *before* the built-in ruleset — first match wins — so a rule you add here can override a built-in categorization for the same host. Removing a custom rule falls back to the built-in categorization automatically. Changes apply on the next report refresh; no reload needed.
+
+For the built-in defaults themselves, hand-edit `src/categories.js`: each rule in `RULES` maps a list of hosts to a category, the first matching rule wins, and unmatched hosts fall into `UNKNOWN`. Reload the extension from `chrome://extensions` after editing that file.

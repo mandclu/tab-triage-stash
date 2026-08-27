@@ -3,8 +3,9 @@
   "name": "Tab Triage & Stash",
   "version": "0.1.0",
   "description": "Prioritize the tabs eating your RAM, then stash them without losing them.",
-  "permissions": ["tabs", "tabGroups", "bookmarks", "storage"],
+  "permissions": ["tabs", "bookmarks", "storage"],
   "optional_permissions": ["processes"],
+  "options_page": "src/options/options.html",
   "background": { "service_worker": "src/background.js", "type": "module" },
   "action": {
     "default_popup": "src/popup/popup.html",

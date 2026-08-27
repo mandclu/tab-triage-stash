@@ -16,7 +16,10 @@
     <div class="toolbar">
       <button id="refresh" class="btn">Refresh</button>
       <button id="undo" class="btn ghost">Undo last close</button>
-      <button id="enable-measured" class="btn ghost">Enable measured memory</button>
+      <button id="enable-measured" class="btn ghost"
+              title="Requires Chrome Dev channel — Chrome hasn't shipped the underlying API to Stable or Beta">
+        Enable measured memory (Dev channel only)
+      </button>
     </div>
   </header>
 
@@ -30,6 +33,13 @@
     </ol>
     <p class="note">This uses Chrome's built-in saved groups. The extension can't do it for you — Chrome doesn't expose an API to save a group — but the <b>Stash</b> controls below give you the same "close now, reopen later" result via a bookmark folder.</p>
   </details>
+
+  <section class="filter-bar">
+    <label for="filter-input">Filter rows</label>
+    <input id="filter-input" type="text" placeholder="Type to filter by title, host, or category (contains match)…" />
+    <button id="select-shown" class="btn ghost small">Select all shown</button>
+    <span id="filter-count" class="muted"></span>
+  </section>
 
   <section class="stash-bar">
     <label for="stash-name">Stash selected tabs as:</label>
@@ -45,6 +55,13 @@
     <h2>Your stashes</h2>
     <ul id="stash-list"><li class="muted">None yet.</li></ul>
   </section>
+
+  <div id="modal-backdrop" class="modal-backdrop" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-message">
+      <p id="modal-message"></p>
+      <div id="modal-actions" class="modal-actions"></div>
+    </div>
+  </div>
 
   <div id="toast" class="toast" hidden></div>
 

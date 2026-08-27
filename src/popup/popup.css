@@ -27,6 +27,7 @@ h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: v
   padding: 8px 12px; border-radius: 8px;
 }
 .btn.block { display: block; width: 100%; }
+.btn.ghost { background: transparent; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn.small { padding: 3px 8px; font-size: 12px; }
 .btn:disabled { opacity: .5; cursor: default; }
@@ -47,3 +48,20 @@ li .t { flex: 1; font-weight: 600; white-space: nowrap; overflow: hidden; text-o
   background: var(--ink); color: var(--bg); padding: 8px 12px; border-radius: 8px;
   font-weight: 600; text-align: center;
 }
+
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5);
+  display: flex; align-items: center; justify-content: center;
+  padding: 14px; z-index: 50;
+}
+/* [hidden] and .modal-backdrop are equal specificity — without this, whichever
+   rule comes later in the stylesheet wins and the "display: flex" above can
+   permanently defeat the `hidden` attribute. This makes hidden always win. */
+.modal-backdrop[hidden] { display: none; }
+.modal-card {
+  background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px; width: 100%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.modal-card p { margin: 0 0 10px; }
+.modal-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }

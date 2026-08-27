@@ -5,7 +5,9 @@
   "private": true,
   "license": "MIT",
   "author": "Martin Anderson-Clutz",
+  "type": "module",
   "scripts": {
-    "zip": "cd \"$(dirname \"$0\")\" 2>/dev/null; rm -f tab-triage.zip && zip -rq tab-triage.zip manifest.json README.md LICENSE src icons -x '*.DS_Store' && echo 'wrote tab-triage.zip'"
+    "zip": "cd \"$(dirname \"$0\")\" 2>/dev/null; rm -f tab-triage.zip && zip -rq tab-triage.zip manifest.json README.md LICENSE src icons -x '*.DS_Store' && echo 'wrote tab-triage.zip'",
+    "test": "node --test"
   }
 }

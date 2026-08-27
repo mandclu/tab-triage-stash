@@ -46,3 +46,24 @@ export function categorize(host) {
   }
   return "UNKNOWN";
 }
+
+// Pure layering helper for the options page's user-defined rules (see
+// src/options/). `extraRules` follows the same shape as RULES entries
+// (`{ cat, match: [host, ...] }`) and is checked BEFORE the built-in RULES,
+// first-match-wins — same semantics as RULES itself, just an earlier list —
+// so a custom rule can override a built-in categorization. Falls back to
+// categorize(host) when no custom rule matches (or none are given), which
+// keeps this additive: categorize()/RULES above are untouched and still
+// behave exactly as before when called directly (as scoring.js does).
+export function categorizeWithRules(host, extraRules) {
+  if (!host) return "UNKNOWN";
+  if (Array.isArray(extraRules)) {
+    for (const rule of extraRules) {
+      if (!rule || !CATEGORIES[rule.cat] || !Array.isArray(rule.match)) continue;
+      if (rule.match.some((d) => host === d || host.endsWith("." + d))) {
+        return rule.cat;
+      }
+    }
+  }
+  return categorize(host);
+}

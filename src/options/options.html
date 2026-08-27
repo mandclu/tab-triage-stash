@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tab Triage Options</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <header>
+    <div class="title">
+      <h1>Tab Triage</h1>
+      <span class="badge">Custom rules</span>
+    </div>
+    <p class="summary">
+      Add your own host → category rules. Custom rules are checked
+      <strong>before</strong> the built-in ruleset, first match wins, so a
+      rule you add here can override a built-in categorization.
+    </p>
+  </header>
+
+  <section class="card">
+    <h2>Add a rule</h2>
+    <div class="add-rule-form">
+      <div class="field">
+        <label for="rule-category">Category</label>
+        <select id="rule-category"></select>
+      </div>
+      <div class="field grow">
+        <label for="rule-hosts">Host(s)</label>
+        <input id="rule-hosts" type="text" placeholder="example.com, sub.example.com" />
+      </div>
+      <button id="add-rule" class="btn primary">Add rule</button>
+    </div>
+    <p class="hint">
+      A host matches exactly or as a subdomain — "example.com" also matches
+      "foo.example.com". Separate multiple hosts with commas.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>Your custom rules <span id="rule-count" class="count" hidden>0</span></h2>
+    <ul id="rule-list" class="rules"><li class="muted">No custom rules yet — built-in categories only.</li></ul>
+  </section>
+
+  <details class="card built-in">
+    <summary>Built-in categories (reference)</summary>
+    <ul id="builtin-list" class="rules"></ul>
+    <p class="hint">
+      These come from <code>src/categories.js</code> and can't be edited
+      here — see the README for how to change the built-in defaults.
+    </p>
+  </details>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>

@@ -3,10 +3,11 @@
 // chrome.storage so an evicted worker can restart without losing it.
 
 import { scoreTab } from "./scoring.js";
-import { CATEGORIES } from "./categories.js";
+import { CATEGORIES, categorizeWithRules } from "./categories.js";
 import { getMemoryProvider } from "./memoryProvider.js";
 
 const UNDO_KEY = "undoBuffer";
+const CUSTOM_RULES_KEY = "customRules"; // user rules from src/options/, layered on RULES
 const STASH_ROOT = "🗂 Stashed Tabs"; // "🗂 Stashed Tabs"
 
 // ---- Message router -------------------------------------------------------
@@ -23,7 +24,8 @@ async function handle(msg) {
     case "GET_SCORED_TABS": return getScoredTabs();
     case "FOCUS_TAB":       return focusTab(msg.tabId);
     case "CLOSE_TABS":      return closeTabs(msg.tabIds);
-    case "STASH_TABS":      return stashTabs(msg.tabIds, msg.name);
+    case "STASH_TABS":      return stashTabs(msg.tabIds, msg.name, msg.targetFolderId);
+    case "FIND_STASH_FOLDER": return findStashFolder(msg.name);
     case "LIST_STASHES":    return listStashes();
     case "RESTORE_STASH":   return restoreStash(msg.folderId);
     case "UNDO_LAST":       return undoLast();
@@ -45,13 +47,21 @@ function openReport() {
 async function getScoredTabs() {
   const tabs = await chrome.tabs.query({ windowType: "normal" });
   const now = Date.now();
+  const customRules = await getCustomRules();
 
   const provider = getMemoryProvider();
   const mem = await provider.forTabs(tabs);
   const memById = Object.fromEntries(mem.map((m) => [m.tabId, m]));
 
   const scored = tabs.map((t) => {
+    // scoreTab() is the pure, unit-tested pipeline (scoring.js) and always
+    // categorizes with the built-in RULES only — it stays untouched. Custom
+    // rules are layered on top here: if they retarget this host's category,
+    // re-derive score/band from the new category's weight so priority
+    // (band, sort order) reflects the override, not just the label.
     const s = scoreTab(t, now);
+    const cat = customRules.length ? categorizeWithRules(s.host, customRules) : s.cat;
+    const { score, band } = applyCategoryOverride(s, cat);
     const m = memById[t.id] || {};
     return {
       id: t.id,
@@ -60,14 +70,14 @@ async function getScoredTabs() {
       url: t.url || "",
       favIconUrl: t.favIconUrl || "",
       host: s.host,
-      category: s.cat,
-      categoryLabel: CATEGORIES[s.cat].label,
+      category: cat,
+      categoryLabel: CATEGORIES[cat].label,
       audible: !!t.audible,
       discarded: !!t.discarded,
       pinned: !!t.pinned,
       ageMin: Math.round(s.ageMin),
-      score: s.score,
-      band: s.band,
+      score,
+      band,
       bytes: m.bytes ?? null,
       sharedWith: m.sharedWith ?? 0,
       reasons: reasonsFor(t, s),
@@ -76,6 +86,31 @@ async function getScoredTabs() {
 
   scored.sort((a, b) => b.score - a.score);
   return { mode: provider.mode, tabs: scored };
+}
+
+// Custom rules live in chrome.storage.local (see src/options/options.js),
+// never a module-level variable — same durable-state rule as the undo
+// buffer, so a torn-down/evicted service worker doesn't lose them.
+async function getCustomRules() {
+  const data = await chrome.storage.local.get(CUSTOM_RULES_KEY);
+  return Array.isArray(data[CUSTOM_RULES_KEY]) ? data[CUSTOM_RULES_KEY] : [];
+}
+
+// If a custom rule changed this tab's category, re-derive score/band using
+// the new category's weight, preserving the same live-signal delta scoreTab
+// already applied (discarded/audible/age/pinned). Mirrors scoring.js's band
+// thresholds locally rather than touching that file.
+function applyCategoryOverride(s, cat) {
+  if (cat === s.cat) return { score: s.score, band: s.band };
+  const delta = s.score - CATEGORIES[s.cat].weight;
+  const score = CATEGORIES[cat].weight + delta;
+  return { score, band: bandFor(score) };
+}
+
+function bandFor(score) {
+  if (score >= 90) return "close-first";
+  if (score >= 60) return "review";
+  return "keep";
 }
 
 function reasonsFor(tab, s) {
@@ -101,10 +136,19 @@ async function closeTabs(tabIds) {
   const tabs = await Promise.all(
     tabIds.map((id) => chrome.tabs.get(id).catch(() => null))
   );
-  const urls = tabs.filter(Boolean).map((t) => t.url);
-  await chrome.storage.local.set({ [UNDO_KEY]: urls });
-  await chrome.tabs.remove(tabIds);
-  return { closed: tabIds.length };
+  // Only act on ids that still resolve to a real tab — a stale id (e.g. a row
+  // closed individually while still checked in a bulk selection) must not
+  // poison the whole chrome.tabs.remove() batch.
+  const valid = tabs.filter(Boolean);
+  if (!valid.length) return { closed: 0, restorable: 0 };
+  await chrome.storage.local.set({ [UNDO_KEY]: valid.map((t) => t.url) });
+  await chrome.tabs.remove(valid.map((t) => t.id));
+  // undoLast() only recreates http(s) URLs (chrome://, extension pages, etc.
+  // can't be reopened via chrome.tabs.create with their original URL) — tell
+  // the caller how many of the closed tabs Undo can actually bring back, so
+  // the UI doesn't promise more than it can deliver.
+  const restorable = valid.filter((t) => /^https?:/.test(t.url)).length;
+  return { closed: valid.length, restorable };
 }
 
 async function undoLast() {
@@ -123,22 +167,51 @@ async function undoLast() {
 
 // ---- Phase 2: stash (bookmark folders) ------------------------------------
 
+// Look up an existing stash folder by exact title, scoped to the stash root
+// (not a global bookmarks search, so it can't match an unrelated folder
+// elsewhere on the bookmarks bar). Returns null when no name is given or no
+// folder matches — the caller uses this to offer "add to existing" before
+// creating a same-named duplicate.
+async function findStashFolder(name) {
+  const clean = (name ?? "").trim();
+  if (!clean) return null;
+  const root = await ensureFolder(STASH_ROOT);
+  const [node] = await chrome.bookmarks.getSubTree(root.id);
+  const match = (node.children || []).find((c) => !c.url && c.title === clean);
+  if (!match) return null;
+  return {
+    id: match.id,
+    title: match.title,
+    count: (match.children || []).filter((x) => x.url).length,
+  };
+}
+
 // Stash a set of tabs into a bookmark folder, then close them.
 // `name` is optional — falls back to a timestamp when empty.
-async function stashTabs(tabIds, name) {
+// `targetFolderId`, when given, adds to that existing folder instead of
+// creating a new one (the caller resolved this via findStashFolder() and a
+// user choice — see report.js/popup.js's stash-conflict prompt).
+async function stashTabs(tabIds, name, targetFolderId) {
   const tabs = await Promise.all(
     tabIds.map((id) => chrome.tabs.get(id).catch(() => null))
   );
   const valid = tabs.filter((t) => t && t.url && /^https?:/.test(t.url));
   if (!valid.length) return { folderId: null, count: 0, title: null };
 
-  const root = await ensureFolder(STASH_ROOT);
-  const stamp = new Date().toISOString().slice(0, 16).replace("T", " ");
-  const clean = (name ?? "").trim();
-  const folder = await chrome.bookmarks.create({
-    parentId: root.id,
-    title: clean ? clean : `Stash ${stamp}`, // user name, else date fallback
-  });
+  let folder;
+  if (targetFolderId) {
+    const [existing] = await chrome.bookmarks.get(targetFolderId).catch(() => []);
+    if (!existing || existing.url) throw new Error("Stash folder not found");
+    folder = existing;
+  } else {
+    const root = await ensureFolder(STASH_ROOT);
+    const stamp = new Date().toISOString().slice(0, 16).replace("T", " ");
+    const clean = (name ?? "").trim();
+    folder = await chrome.bookmarks.create({
+      parentId: root.id,
+      title: clean ? clean : `Stash ${stamp}`, // user name, else date fallback
+    });
+  }
 
   for (const t of valid) {
     await chrome.bookmarks.create({

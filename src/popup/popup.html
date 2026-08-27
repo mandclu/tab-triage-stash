@@ -22,6 +22,13 @@
   <h2>Recent stashes</h2>
   <ul id="stashes"><li class="muted">None yet.</li></ul>
 
+  <div id="modal-backdrop" class="modal-backdrop" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-message">
+      <p id="modal-message"></p>
+      <div id="modal-actions" class="modal-actions"></div>
+    </div>
+  </div>
+
   <div id="toast" class="toast" hidden></div>
   <script type="module" src="popup.js"></script>
 </body>

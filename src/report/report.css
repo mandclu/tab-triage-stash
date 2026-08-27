@@ -77,12 +77,15 @@ kbd {
   border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;
 }
 
+.filter-bar,
 .stash-bar {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   background: var(--card); border: 1px solid var(--line); border-radius: 10px;
   padding: 10px 12px; margin-bottom: 16px;
 }
+.filter-bar label,
 .stash-bar label { font-weight: 600; }
+.filter-bar input,
 .stash-bar input {
   flex: 1; min-width: 200px; font: inherit; padding: 7px 10px;
   border: 1px solid var(--line); border-radius: 8px;
@@ -91,7 +94,10 @@ kbd {
 .muted { color: var(--muted); }
 
 .band { margin-bottom: 20px; }
-.band-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.band-head {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  flex-wrap: wrap; padding-left: 10px; /* lines the checkbox up with row checkboxes below */
+}
 .band .count {
   font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 999px;
   color: #fff; vertical-align: middle;
@@ -101,13 +107,31 @@ kbd {
 .band-keep .count { background: var(--keep); }
 .band-head .hint { color: var(--muted); margin: 0; flex: 1; }
 
+.category-group { margin-top: 10px; }
+.category-group + .category-group { border-top: 1px solid var(--line); padding-top: 10px; }
+.category-head {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+  flex-wrap: wrap; padding-left: 10px; /* lines the checkbox up with row checkboxes below */
+}
+.category-head h3 {
+  font-size: 12.5px; font-weight: 700; margin: 0; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.02em;
+}
+.category-head .count {
+  font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px;
+  background: var(--chip); color: var(--muted); vertical-align: middle;
+}
+
 .rows { display: flex; flex-direction: column; gap: 6px; }
 .row {
   display: flex; align-items: center; gap: 10px;
   background: var(--card); border: 1px solid var(--line); border-radius: 9px;
   padding: 8px 10px;
 }
-.row input[type=checkbox] { width: 16px; height: 16px; flex: none; }
+.row input[type=checkbox],
+.group-check {
+  width: 16px; height: 16px; flex: none; cursor: pointer;
+}
 .fav { width: 18px; height: 18px; flex: none; border-radius: 4px; }
 .fav.placeholder { background: var(--chip); }
 .meta { flex: 1; min-width: 0; }
@@ -136,3 +160,20 @@ kbd {
   background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px;
   font-weight: 600; box-shadow: 0 6px 24px rgba(0,0,0,0.25);
 }
+
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 50;
+}
+/* [hidden] and .modal-backdrop are equal specificity — without this, whichever
+   rule comes later in the stylesheet wins and the "display: flex" above can
+   permanently defeat the `hidden` attribute. This makes hidden always win. */
+.modal-backdrop[hidden] { display: none; }
+.modal-card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: 18px 20px; max-width: 380px; width: 100%;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+.modal-card p { margin: 0 0 14px; }
+.modal-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }

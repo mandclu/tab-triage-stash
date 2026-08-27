@@ -1,4 +1,6 @@
 // popup.js — compact summary + quick actions. Delegates work to the worker.
+import { confirmChoice } from "../modal.js";
+
 const $ = (s) => document.querySelector(s);
 const send = (msg) =>
   chrome.runtime.sendMessage(msg).then((r) => {
@@ -37,12 +39,41 @@ function openReport() {
 
 async function stashCloseFirst() {
   if (!closeFirstIds.length) return;
-  const name = $("#quick-name").value;
-  const res = await send({ type: "STASH_TABS", tabIds: closeFirstIds, name });
+  const name = $("#quick-name").value.trim();
+
+  const targetFolderId = await resolveStashTarget(name);
+  if (targetFolderId === "cancel") return;
+
+  const res = await send({ type: "STASH_TABS", tabIds: closeFirstIds, name, targetFolderId });
   $("#quick-name").value = "";
   toast(`Stashed ${res.count} tabs to "${res.title}".`);
   await refresh();
   await loadStashes();
+}
+
+// If `name` matches an existing stash folder, ask whether to add to it or
+// start a new one with the same name. Returns a folder id to reuse, `null` to
+// create a new folder (no conflict, or "Create new" chosen), or "cancel" to
+// abort. Mirrors report.js's resolveStashTarget (confirmChoice itself is
+// shared — see ../modal.js).
+async function resolveStashTarget(name) {
+  if (!name) return null;
+  const existing = await send({ type: "FIND_STASH_FOLDER", name });
+  if (!existing) return null;
+
+  const choice = await confirmChoice(
+    `A stash named "${existing.title}" already has ${existing.count} tab${
+      existing.count === 1 ? "" : "s"
+    }. Add these tabs to it, or start a new stash with the same name?`,
+    [
+      { key: "existing", label: "Add to existing", className: "primary" },
+      { key: "new", label: "Create new" },
+      { key: "cancel", label: "Cancel", className: "ghost" },
+    ]
+  );
+  if (choice === "existing") return existing.id;
+  if (choice === "new") return null;
+  return "cancel";
 }
 
 async function loadStashes() {
