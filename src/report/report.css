@@ -83,6 +83,10 @@ kbd {
   background: var(--card); border: 1px solid var(--line); border-radius: 10px;
   padding: 10px 12px; margin-bottom: 16px;
 }
+.stash-bar {
+  position: sticky; top: 10px; z-index: 10;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
 .filter-bar label,
 .stash-bar label { font-weight: 600; }
 .filter-bar input,
