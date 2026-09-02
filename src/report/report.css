@@ -10,6 +10,7 @@
   --review: #b25e09;
   --keep: #087443;
   --chip: #eef0f3;
+  --bar: #dde1e7;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -24,6 +25,7 @@
     --review: #f5a623;
     --keep: #4ade80;
     --chip: #262a32;
+    --bar: #333844;
   }
 }
 
@@ -80,7 +82,7 @@ kbd {
 .filter-bar,
 .stash-bar {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  background: var(--bar); border: 1px solid var(--line); border-radius: 10px;
   padding: 10px 12px; margin-bottom: 16px;
 }
 .stash-bar {
