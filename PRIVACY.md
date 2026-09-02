@@ -38,4 +38,4 @@ extension APIs (`chrome.tabs`, `chrome.bookmarks`, `chrome.storage.local`,
 
 ## Contact
 
-Questions about this policy: [add a contact email or issue tracker URL here].
+Questions about this policy: https://github.com/mandclu/tab-triage-stash/issues.
